@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const genesisData = "Genesis Block"
+
 type Block struct {
 	Timestamp     int64
 	Data          []byte
@@ -37,4 +39,8 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	block.SetHash()
 
 	return block
+}
+
+func NewGenesisBlock() *Block {
+	return NewBlock(genesisData, []byte{})
 }

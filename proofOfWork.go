@@ -29,7 +29,7 @@ func NewProofOfWork(block *Block) *ProofOfWork {
 func (proofOfWork *ProofOfWork) prepareData(nonce int64) []byte {
 	data := bytes.Join(
 		[][]byte{
-			proofOfWork.block.PervBlockHash,
+			proofOfWork.block.PrevBlockHash,
 			proofOfWork.block.Data,
 			IntToBytes(proofOfWork.block.Timestamp),
 			IntToBytes(int64(targetBits)),
@@ -61,7 +61,7 @@ func (proofOfWork *ProofOfWork) Validate() bool {
 }
 
 func isHashValid(hash []byte, target *big.Int) bool {
-	var hashInt *big.Int
+	var hashInt big.Int
 	hashInt.SetBytes(hash)
 
 	if hashInt.Cmp(target) == -1 {

@@ -16,3 +16,9 @@ func IntToBytes(num int64) []byte {
 
 	return buff.Bytes()
 }
+
+func panicIfErrNotNil(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

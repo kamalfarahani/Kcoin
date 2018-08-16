@@ -1,17 +1,24 @@
 package kcoin
 
+import "github.com/boltdb/bolt"
+
 type Blockchain struct {
-	blocks []*Block
+	tip []byte
+	db  *bolt.DB
 }
 
-func (blockchain *Blockchain) Add(data string) {
-	prevBlock := blockchain.blocks[len(blockchain.blocks)-1]
-	newBlock := NewBlock(data, prevBlock.Hash)
-	blockchain.blocks = append(blockchain.blocks, newBlock)
+func (blockchain *Blockchain) AddBlock(data string) {
+	lastHash := getLastBlockHash(blockchain.db)
+	newBlock := NewBlock(data, lastHash)
+	addBlockToDB(blockchain.db, newBlock)
+	blockchain.tip = newBlock.Hash
 }
 
 func NewBlockchain() *Blockchain {
+	db, tip := createDBIfNotExist()
+
 	return &Blockchain{
-		blocks: []*Block{NewGenesisBlock()},
+		tip: tip,
+		db:  db,
 	}
 }

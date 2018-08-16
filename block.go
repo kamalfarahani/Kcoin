@@ -12,7 +12,7 @@ const genesisData = "Genesis Block"
 type Block struct {
 	Timestamp     int64
 	Data          []byte
-	PervBlockHash []byte
+	PrevBlockHash []byte
 	Hash          []byte
 	Nonce         int64
 }
@@ -21,7 +21,7 @@ func (block *Block) SetHash() {
 	timestamp := []byte(strconv.FormatInt(block.Timestamp, 10))
 	headers := bytes.Join(
 		[][]byte{
-			block.PervBlockHash,
+			block.PrevBlockHash,
 			block.Data,
 			timestamp,
 		}, []byte{})
@@ -34,7 +34,7 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	block := &Block{
 		Timestamp:     time.Now().Unix(),
 		Data:          []byte(data),
-		PervBlockHash: prevBlockHash,
+		PrevBlockHash: prevBlockHash,
 		Hash:          []byte{},
 		Nonce:         0,
 	}

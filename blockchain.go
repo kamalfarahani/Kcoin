@@ -14,6 +14,13 @@ func (blockchain *Blockchain) AddBlock(data string) {
 	blockchain.tip = newBlock.Hash
 }
 
+func (blockchain *Blockchain) Iterator() *BlockchainIterator {
+	return &BlockchainIterator{
+		currentHash: blockchain.tip,
+		db:          blockchain.db,
+	}
+}
+
 func NewBlockchain() *Blockchain {
 	db, tip := createDBIfNotExist()
 

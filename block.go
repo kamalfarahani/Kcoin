@@ -14,6 +14,7 @@ type Block struct {
 	Data          []byte
 	PervBlockHash []byte
 	Hash          []byte
+	Nonce         int64
 }
 
 func (block *Block) SetHash() {
@@ -35,8 +36,18 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Data:          []byte(data),
 		PervBlockHash: prevBlockHash,
 		Hash:          []byte{},
+		Nonce:         0,
 	}
-	block.SetHash()
+
+	proofOfWork := NewProofOfWork(block)
+	nonce, hash, err := proofOfWork.Mine()
+
+	if err != nil {
+		panic(err)
+	}
+
+	block.Hash = hash
+	block.Nonce = nonce
 
 	return block
 }

@@ -7,7 +7,7 @@ const dbFileMode = 0600
 const blocksBucketName = "blocks"
 const lastHashKey = "l"
 
-func createDBIfNotExist() (*bolt.DB, []byte) {
+func createDBIfNotExist(address string) (*bolt.DB, []byte) {
 	var tip []byte
 	db, outErr := bolt.Open(dbFilePath, dbFileMode, nil)
 
@@ -16,7 +16,8 @@ func createDBIfNotExist() (*bolt.DB, []byte) {
 		var inErr error
 
 		if blocksBucket == nil {
-			genesis := NewGenesisBlock()
+			coinbaseTx := NewCoinbaseTransaction(address, genesisCoinbaseData)
+			genesis := NewGenesisBlock(coinbaseTx)
 			blocksBucket, inErr = tx.CreateBucket([]byte(blocksBucketName))
 			inErr = blocksBucket.Put(genesis.Hash, SerializeBlock(genesis))
 			inErr = blocksBucket.Put([]byte(lastHashKey), genesis.Hash)

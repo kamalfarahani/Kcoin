@@ -3,37 +3,35 @@ package kcoin
 import (
 	"bytes"
 	"crypto/sha256"
-	"strconv"
 	"time"
 )
 
-const genesisData = "Genesis Block"
+const genesisCoinbaseData = "Kamal Genesis Block"
 
 type Block struct {
 	Timestamp     int64
-	Data          []byte
+	Transactions  []*Transaction
 	PrevBlockHash []byte
 	Hash          []byte
 	Nonce         int64
 }
 
-func (block *Block) SetHash() {
-	timestamp := []byte(strconv.FormatInt(block.Timestamp, 10))
-	headers := bytes.Join(
-		[][]byte{
-			block.PrevBlockHash,
-			block.Data,
-			timestamp,
-		}, []byte{})
+func (block *Block) HashTransactions() []byte {
+	var txHashes [][]byte
 
-	hash := sha256.Sum256(headers)
-	block.Hash = hash[:]
+	for _, tx := range block.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+
+	resultHash := sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return resultHash[:]
 }
 
-func NewBlock(data string, prevBlockHash []byte) *Block {
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
 	block := &Block{
 		Timestamp:     time.Now().Unix(),
-		Data:          []byte(data),
+		Transactions:  transactions,
 		PrevBlockHash: prevBlockHash,
 		Hash:          []byte{},
 		Nonce:         0,
@@ -52,6 +50,6 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	return block
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock(genesisData, []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }

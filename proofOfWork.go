@@ -30,7 +30,7 @@ func (proofOfWork *ProofOfWork) prepareData(nonce int64) []byte {
 	data := bytes.Join(
 		[][]byte{
 			proofOfWork.block.PrevBlockHash,
-			proofOfWork.block.Data,
+			proofOfWork.block.HashTransactions(),
 			IntToBytes(proofOfWork.block.Timestamp),
 			IntToBytes(int64(targetBits)),
 			IntToBytes(nonce),

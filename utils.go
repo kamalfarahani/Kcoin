@@ -17,6 +17,15 @@ func IntToBytes(num int64) []byte {
 	return buff.Bytes()
 }
 
+func containsUint(slice []uint, elemet uint) bool {
+	for _, a := range slice {
+		if a == elemet {
+			return true
+		}
+	}
+	return false
+}
+
 func panicIfErrNotNil(err error) {
 	if err != nil {
 		panic(err)

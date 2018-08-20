@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
+	"errors"
+	"log"
 )
 
 const subsidy = 10
@@ -13,6 +15,17 @@ type Transaction struct {
 	ID      []byte
 	Inputs  []TransactionInput
 	Outputs []TransactionOutput
+}
+
+func NewTransaction(inputs []TransactionInput, outputs []TransactionOutput) *Transaction {
+	transaction := &Transaction{
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
+
+	transaction.SetID()
+
+	return transaction
 }
 
 func (transaction *Transaction) SetID() {
@@ -52,6 +65,55 @@ func NewCoinbaseTransaction(to, data string) *Transaction {
 	transaction.SetID()
 
 	return &transaction
+}
+
+func SendCoin(fromAddress, toAddress string, amount int) {
+	blockchain := NewBlockchain(fromAddress)
+	defer blockchain.db.Close()
+
+	tx, err := NewUTXOTransaction(*blockchain, fromAddress, toAddress, amount)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	blockchain.AddBlock([]*Transaction{tx})
+}
+
+func NewUTXOTransaction(
+	blockchain Blockchain,
+	fromAddress, toAddress string, amount int) (*Transaction, error) {
+
+	if GetBalance(blockchain, fromAddress) < amount {
+		return nil, errors.New("ERROR: Not enough funds")
+	}
+
+	var inputs []TransactionInput
+	var outputs []TransactionOutput
+	accumulated := 0
+	txToUnspentOutputIndexs := FindUnspentTransactions(blockchain, fromAddress)
+
+Work:
+	for tx, unspentIndexes := range txToUnspentOutputIndexs {
+		for outputIndex, output := range tx.Outputs {
+			if containsUint(unspentIndexes, uint(outputIndex)) {
+				newInput := TransactionInput{tx.ID, outputIndex, fromAddress}
+				inputs = append(inputs, newInput)
+				accumulated += output.Value
+			}
+
+			if accumulated >= amount {
+				break Work
+			}
+		}
+	}
+
+	outputs = append(outputs, TransactionOutput{amount, toAddress})
+	if accumulated > amount {
+		outputs = append(outputs, TransactionOutput{accumulated - amount, fromAddress})
+	}
+
+	return NewTransaction(inputs, outputs), nil
 }
 
 func GetBalance(blockchain Blockchain, address string) int {

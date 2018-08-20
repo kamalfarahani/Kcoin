@@ -138,8 +138,6 @@ func FindUnspentTransactions(blockchain Blockchain, address string) map[*Transac
 	for {
 		block := blockchainIterator.Next()
 		for _, tx := range block.Transactions {
-			txID := hex.EncodeToString(tx.ID)
-
 			unspentTxOutputs := findTransactionUnspentOutputIndexes(
 				address, *tx, txIDToSpentOutputIndexes)
 
@@ -147,9 +145,14 @@ func FindUnspentTransactions(blockchain Blockchain, address string) map[*Transac
 				txToUnspentOutputIndexs[tx],
 				unspentTxOutputs...)
 
-			txIDToSpentOutputIndexes[txID] = append(
-				txIDToSpentOutputIndexes[txID],
-				findTransactionSpentOutputIndexes(address, *tx)...)
+			for _, input := range tx.Inputs {
+				if isInputSpent(address, input) {
+					inputTxID := hex.EncodeToString(input.TxID)
+					txIDToSpentOutputIndexes[inputTxID] = append(
+						txIDToSpentOutputIndexes[inputTxID],
+						input.OutputIndex)
+				}
+			}
 		}
 
 		if len(block.PrevBlockHash) == 0 {
@@ -193,18 +196,10 @@ func isOutputSpent(outputIndex int, spentOutputIndexes []int) bool {
 	return false
 }
 
-func findTransactionSpentOutputIndexes(address string, transaction Transaction) []int {
-	if transaction.IsCoinbase() {
-		return []int{}
+func isInputSpent(address string, input TransactionInput) bool {
+	if input.CanUnlockOutputWith(address) {
+		return true
 	}
 
-	var spentOutputIndexes []int
-
-	for _, inputTx := range transaction.Inputs {
-		if inputTx.CanUnlockOutputWith(address) {
-			spentOutputIndexes = append(spentOutputIndexes, inputTx.OutputIndex)
-		}
-	}
-
-	return spentOutputIndexes
+	return false
 }

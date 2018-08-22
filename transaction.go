@@ -45,7 +45,7 @@ func NewCoinbaseTransaction(toAddress []byte, data string) *Transaction {
 	txIn := TransactionInput{
 		TxID:        []byte{},
 		OutputIndex: -1,
-		Signature:   nil,
+		Signature:   []byte(data),
 		PubKey:      nil,
 	}
 

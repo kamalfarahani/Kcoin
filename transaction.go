@@ -41,16 +41,19 @@ func (transaction *Transaction) IsCoinbase() bool {
 		transaction.Inputs[0].OutputIndex == -1
 }
 
-func NewCoinbaseTransaction(to, data string) *Transaction {
+func NewCoinbaseTransaction(toAddress []byte, data string) *Transaction {
 	txIn := TransactionInput{
 		TxID:        []byte{},
 		OutputIndex: -1,
-		ScriptSig:   data,
+		Signature:   nil,
+		PubKey:      nil,
 	}
 
+	//Handle err later
+	pubKeyHash, _ := getPubKeyHashFromAddress(toAddress)
 	txOut := TransactionOutput{
-		Value:        subsidy,
-		ScriptPubKey: to,
+		Value:      subsidy,
+		PubKeyHash: pubKeyHash,
 	}
 
 	return NewTransaction(

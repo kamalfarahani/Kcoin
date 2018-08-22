@@ -24,7 +24,7 @@ func (blockchain *Blockchain) Iterator() *BlockchainIterator {
 }
 
 //Fix this later
-func NewBlockchain(address string) *Blockchain {
+func NewBlockchain(address []byte) *Blockchain {
 	db, tip := createDBIfNotExist(address)
 
 	return &Blockchain{

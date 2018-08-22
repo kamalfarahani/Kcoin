@@ -1,6 +1,7 @@
 package kcoin
 
 import (
+	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
 	"log"
@@ -16,11 +17,11 @@ func NewBlockchainManager(blockchain *Blockchain) *BlockchainManager {
 	}
 }
 
-func SendCoin(fromAddress, toAddress string, amount int) {
-	blockchain := NewBlockchain(fromAddress)
+func SendCoin(wallet Wallet, toAddress []byte, amount int) {
+	blockchain := NewBlockchain(wallet.GetAddress())
 	bManager := NewBlockchainManager(blockchain)
 
-	tx, err := bManager.NewUTXOTransaction(fromAddress, toAddress, amount)
+	tx, err := bManager.NewUTXOTransaction(wallet, toAddress, amount)
 	if err != nil {
 		log.Println(err)
 		return
@@ -30,18 +31,18 @@ func SendCoin(fromAddress, toAddress string, amount int) {
 }
 
 func (bManager *BlockchainManager) NewUTXOTransaction(
-	fromAddress, toAddress string, amount int) (*Transaction, error) {
-	if bManager.GetBalance(fromAddress) < amount {
+	wallet Wallet, toAddress []byte, amount int) (*Transaction, error) {
+	if bManager.GetBalance(wallet.GetAddress()) < amount {
 		return nil, errors.New("ERROR: Not enough funds")
 	}
 
 	var inputs []TransactionInput
 	accumulated := 0
-	txToUnspentOutputIndexs := bManager.FindUnspentTransactions(fromAddress)
+	txToUnspentOutputIndexs := bManager.FindUnspentTransactions(wallet.GetAddress())
 
 	for tx, unspentIndexes := range txToUnspentOutputIndexs {
 		newInputs, newAccumulated := makeInputsFromUnspentTxOutputs(
-			fromAddress, amount, *tx, unspentIndexes, accumulated)
+			wallet.PrivateKey.PublicKey, amount, *tx, unspentIndexes, accumulated)
 
 		inputs = append(inputs, newInputs...)
 		accumulated = newAccumulated
@@ -51,12 +52,12 @@ func (bManager *BlockchainManager) NewUTXOTransaction(
 	}
 
 	outputs := makeOutputsForUTXOTransaction(
-		fromAddress, toAddress, amount, accumulated-amount)
+		wallet.GetAddress(), toAddress, amount, accumulated-amount)
 
 	return NewTransaction(inputs, outputs), nil
 }
 
-func (bManager *BlockchainManager) GetBalance(address string) int {
+func (bManager *BlockchainManager) GetBalance(address []byte) int {
 	balance := 0
 	txToUnspentOutputIndexs := bManager.FindUnspentTransactions(address)
 	for tx, unspentIndexs := range txToUnspentOutputIndexs {
@@ -70,7 +71,7 @@ func (bManager *BlockchainManager) GetBalance(address string) int {
 	return balance
 }
 
-func (bManager *BlockchainManager) FindUnspentTransactions(address string) map[*Transaction][]uint {
+func (bManager *BlockchainManager) FindUnspentTransactions(address []byte) map[*Transaction][]uint {
 	txToUnspentOutputIndexs := make(map[*Transaction][]uint)
 	txIDToSpentOutputIndexes := make(map[string][]uint)
 	blockchainIterator := bManager.blockchain.Iterator()
@@ -104,7 +105,7 @@ func (bManager *BlockchainManager) FindUnspentTransactions(address string) map[*
 }
 
 func findTransactionUnspentOutputIndexes(
-	address string,
+	address []byte,
 	transaction Transaction,
 	txIDToSpentOutputIndexes map[string][]uint) []uint {
 
@@ -113,7 +114,8 @@ func findTransactionUnspentOutputIndexes(
 
 	for outputIndex, output := range transaction.Outputs {
 		if !containsUint(txIDToSpentOutputIndexes[txID], uint(outputIndex)) {
-			if output.CanBeUnlockedWith(address) {
+			pubKeyHash, _ := getPubKeyHashFromAddress(address)
+			if output.IsLockedWithKey(pubKeyHash) {
 				unspentOutputIndexes = append(unspentOutputIndexes, uint(outputIndex))
 			}
 		}
@@ -122,8 +124,9 @@ func findTransactionUnspentOutputIndexes(
 	return unspentOutputIndexes
 }
 
-func isInputSpent(address string, input TransactionInput) bool {
-	if input.CanUnlockOutputWith(address) {
+func isInputSpent(address []byte, input TransactionInput) bool {
+	pubKeyHash, _ := getPubKeyHashFromAddress(address)
+	if input.UsesKey(pubKeyHash) {
 		return true
 	}
 
@@ -131,7 +134,7 @@ func isInputSpent(address string, input TransactionInput) bool {
 }
 
 func makeInputsFromUnspentTxOutputs(
-	address string,
+	pubKey ecdsa.PublicKey,
 	amount int,
 	tx Transaction,
 	unspentIndexes []uint,
@@ -142,7 +145,7 @@ func makeInputsFromUnspentTxOutputs(
 
 	for outputIndex, output := range tx.Outputs {
 		if containsUint(unspentIndexes, uint(outputIndex)) {
-			newInput := TransactionInput{tx.ID, outputIndex, address}
+			newInput := TransactionInput{tx.ID, outputIndex, &pubKey, nil}
 			resultInputs = append(resultInputs, newInput)
 			resultAccumulated += output.Value
 		}
@@ -156,21 +159,23 @@ func makeInputsFromUnspentTxOutputs(
 }
 
 func makeOutputsForUTXOTransaction(
-	fromAddress, toAddress string,
+	fromAddress, toAddress []byte,
 	amount, exchange int) []TransactionOutput {
 
+	toPubKey, _ := getPubKeyHashFromAddress(toAddress)
 	resultOutputs := []TransactionOutput{
 		TransactionOutput{
-			Value:        amount,
-			ScriptPubKey: toAddress,
+			Value:      amount,
+			PubKeyHash: toPubKey,
 		},
 	}
 
+	fromPubKey, _ := getPubKeyHashFromAddress(fromAddress)
 	if exchange != 0 {
 		resultOutputs = append(
 			resultOutputs, TransactionOutput{
-				Value:        exchange,
-				ScriptPubKey: fromAddress,
+				Value:      exchange,
+				PubKeyHash: fromPubKey,
 			})
 	}
 

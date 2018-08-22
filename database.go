@@ -7,7 +7,7 @@ const dbFileMode = 0600
 const blocksBucketName = "blocks"
 const lastHashKey = "l"
 
-func createDBIfNotExist(address string) (*bolt.DB, []byte) {
+func createDBIfNotExist(address []byte) (*bolt.DB, []byte) {
 	var tip []byte
 	db, outErr := bolt.Open(dbFilePath, dbFileMode, nil)
 

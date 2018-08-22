@@ -1,11 +1,19 @@
 package kcoin
 
+import (
+	"bytes"
+	"crypto/ecdsa"
+)
+
 type TransactionInput struct {
 	TxID        []byte
 	OutputIndex int
-	ScriptSig   string
+	PubKey      *ecdsa.PublicKey
+	Signature   []byte
 }
 
-func (in *TransactionInput) CanUnlockOutputWith(unlockingData string) bool {
-	return in.ScriptSig == unlockingData
+func (txInput *TransactionInput) UsesKey(pubKeyHash []byte) bool {
+	lockingHash := hashPubKey(*txInput.PubKey)
+
+	return bytes.Compare(lockingHash, pubKeyHash) == 0
 }

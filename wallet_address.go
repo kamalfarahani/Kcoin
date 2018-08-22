@@ -22,6 +22,16 @@ func (wallet *Wallet) GetAddress() []byte {
 	return encoded
 }
 
+func getPubKeyHashFromAddress(address []byte) ([]byte, error) {
+	encoding := base58.BitcoinEncoding
+	decodedAddress, err := encoding.Decode(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedAddress[1 : len(decodedAddress)-addressChecksumLen], nil
+}
+
 func hashPubKey(pubKey ecdsa.PublicKey) []byte {
 	xyAppendedPubKey := append(pubKey.X.Bytes(), pubKey.Y.Bytes()...)
 	pubKeySHA256 := sha256.Sum256(xyAppendedPubKey)

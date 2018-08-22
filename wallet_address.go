@@ -3,8 +3,8 @@ package kcoin
 import (
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"errors"
 
-	"github.com/itchyny/base58-go"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -15,18 +15,16 @@ func (wallet *Wallet) GetAddress() []byte {
 
 	fullPayload := append(versionedPayload, checksum...)
 
-	encoder := base58.BitcoinEncoding
-	encoded, err := encoder.Encode(fullPayload)
-	panicIfErrNotNil(err)
+	encoded := Base58Encode(fullPayload)
 
 	return encoded
 }
 
 func getPubKeyHashFromAddress(address []byte) ([]byte, error) {
-	encoding := base58.BitcoinEncoding
-	decodedAddress, err := encoding.Decode(address)
-	if err != nil {
-		return nil, err
+	decodedAddress := Base58Decode(address)
+	//fix it later
+	if len(address) < addressChecksumLen+2 {
+		return nil, errors.New("Invalid address")
 	}
 
 	return decodedAddress[1 : len(decodedAddress)-addressChecksumLen], nil

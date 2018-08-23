@@ -13,6 +13,10 @@ type TransactionInput struct {
 }
 
 func (txInput *TransactionInput) UsesKey(pubKeyHash []byte) bool {
+	if txInput.PubKey == nil {
+		return false
+	}
+
 	lockingHash := hashPubKey(*txInput.PubKey)
 
 	return bytes.Compare(lockingHash, pubKeyHash) == 0

@@ -8,7 +8,7 @@ import (
 	"math/big"
 )
 
-const targetBits = 8
+const targetBits = 24
 const hashBits = 256
 
 type ProofOfWork struct {

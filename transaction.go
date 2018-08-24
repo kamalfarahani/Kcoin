@@ -1,9 +1,7 @@
 package kcoin
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
 )
 
 const subsidy = 10
@@ -26,12 +24,7 @@ func NewTransaction(inputs []TransactionInput, outputs []TransactionOutput) *Tra
 }
 
 func (transaction *Transaction) SetID() {
-	var encodeWriter bytes.Buffer
-	encoder := gob.NewEncoder(&encodeWriter)
-	err := encoder.Encode(transaction)
-	panicIfErrNotNil(err)
-
-	hash := sha256.Sum256(encodeWriter.Bytes())
+	hash := sha256.Sum256(SerializeTransaction(*transaction))
 	transaction.ID = hash[:]
 }
 

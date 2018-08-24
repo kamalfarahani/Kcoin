@@ -3,6 +3,7 @@ package kcoin
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"math/big"
 )
 
 type TransactionInput struct {
@@ -10,6 +11,16 @@ type TransactionInput struct {
 	OutputIndex int
 	PubKey      *ecdsa.PublicKey
 	Signature   []byte
+}
+
+func (txInput *TransactionInput) GetSignature() (*big.Int, *big.Int) {
+	r := big.Int{}
+	s := big.Int{}
+	sigLen := len(txInput.Signature)
+	r.SetBytes(txInput.Signature[:(sigLen / 2)])
+	s.SetBytes(txInput.Signature[(sigLen / 2):])
+
+	return &r, &s
 }
 
 func (txInput *TransactionInput) UsesKey(pubKeyHash []byte) bool {

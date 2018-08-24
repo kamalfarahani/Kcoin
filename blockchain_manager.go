@@ -17,17 +17,14 @@ func NewBlockchainManager(blockchain *Blockchain) *BlockchainManager {
 	}
 }
 
-func SendCoin(wallet Wallet, toAddress []byte, amount int) {
-	blockchain := NewBlockchain(wallet.GetAddress())
-	bManager := NewBlockchainManager(blockchain)
-
+func (bManager *BlockchainManager) SendCoin(wallet Wallet, toAddress []byte, amount int) {
 	tx, err := bManager.NewUTXOTransaction(wallet, toAddress, amount)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	blockchain.AddBlock([]*Transaction{tx})
+	bManager.blockchain.AddBlock([]*Transaction{tx})
 }
 
 func (bManager *BlockchainManager) NewUTXOTransaction(
@@ -54,7 +51,9 @@ func (bManager *BlockchainManager) NewUTXOTransaction(
 	outputs := makeOutputsForUTXOTransaction(
 		wallet.GetAddress(), toAddress, amount, accumulated-amount)
 
-	return NewTransaction(inputs, outputs), nil
+	txManager := NewTransactionManager(NewTransaction(inputs, outputs))
+	txManager.Sign(wallet.PrivateKey)
+	return txManager.tx, nil
 }
 
 func (bManager *BlockchainManager) GetBalance(address []byte) int {

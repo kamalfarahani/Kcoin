@@ -1,6 +1,8 @@
 package kcoin
 
 import (
+	"log"
+
 	"github.com/boltdb/bolt"
 )
 
@@ -10,6 +12,14 @@ type Blockchain struct {
 }
 
 func (blockchain *Blockchain) AddBlock(transactions []*Transaction) {
+	for _, tx := range transactions {
+		txManager := NewTransactionManager(tx)
+		if !txManager.Verify(blockchain) {
+			log.Println("ERROR: Invalid transaction")
+			return
+		}
+	}
+
 	lastHash := getLastBlockHash(blockchain.db)
 	newBlock := NewBlock(transactions, lastHash)
 	addBlockToDB(blockchain.db, newBlock)

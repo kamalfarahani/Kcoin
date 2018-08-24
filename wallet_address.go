@@ -31,7 +31,7 @@ func getPubKeyHashFromAddress(address []byte) ([]byte, error) {
 }
 
 func hashPubKey(pubKey ecdsa.PublicKey) []byte {
-	xyAppendedPubKey := append(pubKey.X.Bytes(), pubKey.Y.Bytes()...)
+	xyAppendedPubKey := getXYAppendedPubKey(pubKey)
 	pubKeySHA256 := sha256.Sum256(xyAppendedPubKey)
 
 	ripemdHasher := ripemd160.New()

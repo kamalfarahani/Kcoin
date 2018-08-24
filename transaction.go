@@ -36,10 +36,10 @@ func (transaction *Transaction) IsCoinbase() bool {
 
 func NewCoinbaseTransaction(toAddress []byte, data string) *Transaction {
 	txIn := TransactionInput{
-		TxID:        []byte{},
-		OutputIndex: -1,
-		Signature:   []byte(data),
-		PubKey:      nil,
+		TxID:                []byte{},
+		OutputIndex:         -1,
+		XYAppendedPubKey:    []byte(data),
+		XYAppendedSignature: nil,
 	}
 
 	//Handle err later

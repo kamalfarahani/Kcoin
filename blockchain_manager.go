@@ -144,7 +144,13 @@ func makeInputsFromUnspentTxOutputs(
 
 	for outputIndex, output := range tx.Outputs {
 		if containsUint(unspentIndexes, uint(outputIndex)) {
-			newInput := TransactionInput{tx.ID, outputIndex, &pubKey, nil}
+			newInput := TransactionInput{
+				TxID:                tx.ID,
+				OutputIndex:         outputIndex,
+				XYAppendedPubKey:    getXYAppendedPubKey(pubKey),
+				XYAppendedSignature: nil,
+			}
+
 			resultInputs = append(resultInputs, newInput)
 			resultAccumulated += output.Value
 		}

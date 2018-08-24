@@ -2,13 +2,8 @@ package kcoin
 
 import (
 	"bytes"
-	"crypto/elliptic"
 	"encoding/gob"
 )
-
-func init() {
-	gob.Register(elliptic.P256())
-}
 
 func SerializeTransaction(transaction Transaction) []byte {
 	var encodeWriter bytes.Buffer

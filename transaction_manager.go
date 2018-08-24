@@ -27,7 +27,7 @@ func (tManager *TransactionManager) Sign(prKey ecdsa.PrivateKey) {
 		r, s, err := ecdsa.Sign(rand.Reader, &prKey, txCopy.ID)
 		panicIfErrNotNil(err)
 
-		tManager.tx.Inputs[i].Signature = append(r.Bytes(), s.Bytes()...)
+		tManager.tx.Inputs[i].XYAppendedSignature = append(r.Bytes(), s.Bytes()...)
 	}
 }
 
@@ -43,7 +43,7 @@ func (tManager *TransactionManager) Verify(blockchain *Blockchain) bool {
 		}
 
 		r, s := input.GetSignature()
-		if !ecdsa.Verify(input.PubKey, tManager.tx.ID, r, s) {
+		if !ecdsa.Verify(input.GetPublickKey(), tManager.tx.ID, r, s) {
 			return false
 		}
 	}
@@ -57,10 +57,10 @@ func (tManager *TransactionManager) trimmedCopy() Transaction {
 
 	for _, input := range tManager.tx.Inputs {
 		inputs = append(inputs, TransactionInput{
-			TxID:        input.TxID,
-			OutputIndex: input.OutputIndex,
-			PubKey:      input.PubKey,
-			Signature:   nil,
+			TxID:                input.TxID,
+			OutputIndex:         input.OutputIndex,
+			XYAppendedPubKey:    input.XYAppendedPubKey,
+			XYAppendedSignature: nil,
 		})
 	}
 
@@ -88,7 +88,7 @@ func isInputValid(input TransactionInput, blockchain *Blockchain) bool {
 	}
 
 	outputPubKey := prevTx.Outputs[input.OutputIndex].PubKeyHash
-	inputPubKeyHash := hashPubKey(*input.PubKey)
+	inputPubKeyHash := hashPubKey(*input.GetPublickKey())
 	if bytes.Compare(outputPubKey, inputPubKeyHash) != 0 {
 		return false
 	}
